@@ -1,0 +1,9 @@
+{
+  "name": "mangakaizoku",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bash start.sh",
+    "proxy": "node proxy.js",
+    "serve": "npx serve public"
+  }
+}
