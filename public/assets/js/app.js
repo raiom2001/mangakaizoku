@@ -38,21 +38,32 @@ async function renderHome() {
   const app = document.getElementById('app');
   UI.updateNavActive('home');
   app.innerHTML = `
+    <div class="hero">
+      <div class="hero-inner">
+        <div class="hero-eyebrow">Piratas &amp; Samurais</div>
+        <h1 class="hero-title">Sua tripulacao de<br><span>mangas favoritos</span></h1>
+        <p class="hero-sub">Explore milhares de obras. Do shonen ao seinen, do josei ao kodomomuke — navegue sem limites.</p>
+      </div>
+    </div>
+
     <div class="home-section">
       <div class="section-header">
         <h2 class="section-title">Populares</h2>
+        <a href="#/search" class="section-link">Ver mais</a>
       </div>
       <div class="manga-grid" id="popularGrid">${UI.skeletonGrid(12)}</div>
     </div>
     <div class="home-section">
       <div class="section-header">
         <h2 class="section-title">Atualizados</h2>
+        <a href="#/search" class="section-link">Ver mais</a>
       </div>
       <div class="manga-grid" id="updatedGrid">${UI.skeletonGrid(12)}</div>
     </div>
     <div class="home-section">
       <div class="section-header">
         <h2 class="section-title">Mais Avaliados</h2>
+        <a href="#/search" class="section-link">Ver mais</a>
       </div>
       <div class="manga-grid" id="ratedGrid">${UI.skeletonGrid(12)}</div>
     </div>
