@@ -38,6 +38,15 @@ async function renderHome() {
   const app = document.getElementById('app');
   UI.updateNavActive('home');
   app.innerHTML = `
+    <div class="home-banner">
+      <div class="banner-particles" id="bannerParticles"></div>
+      <div class="banner-content">
+        <div class="banner-eyebrow">Piratas &amp; Samurais</div>
+        <h1 class="banner-title">Sua tripulacao de<br><span>mangas favoritos</span></h1>
+        <p class="banner-desc">Explore milhares de obras. Do shonen ao seinen — navegue sem limites.</p>
+      </div>
+    </div>
+
     <div class="hero">
       <div class="hero-inner">
         <div class="hero-eyebrow">Piratas &amp; Samurais</div>
@@ -724,3 +733,18 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+function initBannerParticles() {
+  var wrap = document.getElementById('bannerParticles');
+  if (!wrap) return;
+  for (var i = 0; i < 18; i++) {
+    var s = document.createElement('span');
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.animationDuration = (3 + Math.random() * 5) + 's';
+    s.style.animationDelay = (Math.random() * 4) + 's';
+    var size = (1 + Math.random() * 2) + 'px';
+    s.style.width = size; s.style.height = size;
+    wrap.appendChild(s);
+  }
+}
+document.addEventListener('DOMContentLoaded', initBannerParticles);
