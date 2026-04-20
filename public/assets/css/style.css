@@ -609,18 +609,10 @@ body.reader-mode{padding-top:0;overflow:hidden}
 }
 .reader-btn:hover{background:rgba(201,168,76,.15);border-color:var(--gold);color:var(--gold)}
 
-
-
-
-
 @keyframes flipInFromRight{0%{transform:translateX(60px) rotateY(-12deg);opacity:0}100%{transform:translateX(0) rotateY(0);opacity:1}}
 @keyframes flipOutToLeft{0%{transform:translateX(0) rotateY(0);opacity:1}100%{transform:translateX(-60px) rotateY(12deg);opacity:0}}
 @keyframes flipInFromLeft{0%{transform:translateX(-60px) rotateY(12deg);opacity:0}100%{transform:translateX(0) rotateY(0);opacity:1}}
 @keyframes flipOutToRight{0%{transform:translateX(0) rotateY(0);opacity:1}100%{transform:translateX(60px) rotateY(-12deg);opacity:0}}
-.page-img.enter-next{animation:flipInFromRight 220ms var(--ease) forwards}
-.page-img.leave-next{animation:flipOutToLeft 180ms ease-in forwards}
-.page-img.enter-prev{animation:flipInFromLeft 220ms var(--ease) forwards}
-.page-img.leave-prev{animation:flipOutToRight 180ms ease-in forwards}
 
 .reader-nav-btn:hover{background:rgba(201,168,76,.15);border-color:var(--gold);transform:translateY(-50%) scaleY(1.04)}
 .reader-nav-btn.prev{left:10px}
@@ -758,7 +750,6 @@ body.reader-mode{padding-top:0;overflow:hidden}
   0%   {
 }
 }
-
 
 /* ===== LOGO IMG ===== */
 .logo-img {
@@ -900,85 +891,109 @@ body.reader-mode{padding-top:0;overflow:hidden}
   .banner-desc { font-size: 13px; }
 }
 
-/* ── READER HORIZONTAL MANGA ──────────────────────── */
-.reader-pages-horizontal {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-  background: #000;
-  width: 100%;
-  height: 100%;
-}
-.page-slot {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-}
-.page-img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: 100%;
-  object-fit: contain;
-  position: absolute;
-  display: block;
-  -webkit-user-drag: none;
-  user-select: none;
-}
 /* Zonas de tap invisíveis */
-.tap-zone {
-  position: absolute;
-  top: 56px;      /* abaixo do header */
-  bottom: 68px;   /* acima do footer */
-  width: 38%;
-  z-index: 5;     /* abaixo do header (z-index:10) */
-  cursor: pointer;
-}
-.tap-prev { left: 0; }
-.tap-next  { right: 0; }
 
 /* Animações de virada */
 @keyframes flipInFromRight  { 0%{transform:translateX(60px) rotateY(-10deg);opacity:0} 100%{transform:translateX(0) rotateY(0);opacity:1} }
 @keyframes flipOutToLeft    { 0%{transform:translateX(0) rotateY(0);opacity:1} 100%{transform:translateX(-60px) rotateY(10deg);opacity:0} }
 @keyframes flipInFromLeft   { 0%{transform:translateX(-60px) rotateY(10deg);opacity:0} 100%{transform:translateX(0) rotateY(0);opacity:1} }
 @keyframes flipOutToRight   { 0%{transform:translateX(0) rotateY(0);opacity:1} 100%{transform:translateX(60px) rotateY(-10deg);opacity:0} }
-.page-img.enter-next  { animation: flipInFromRight  200ms var(--ease) forwards; }
-.page-img.leave-next  { animation: flipOutToLeft    160ms ease-in    forwards; }
-.page-img.enter-prev  { animation: flipInFromLeft   200ms var(--ease) forwards; }
-.page-img.leave-prev  { animation: flipOutToRight   160ms ease-in    forwards; }
 
 /* Modo fullscreen — imagem ocupa tudo */
-:-webkit-full-screen .page-img { height: 100vh; max-height: 100vh; }
-:fullscreen         .page-img { height: 100vh; max-height: 100vh; }
+:-webkit-full-screen 
+:fullscreen         
 
 /* Remove botões nav antigos se existirem */
+
+/* ═══════════════════════════════════════════
+   READER — horizontal e vertical
+═══════════════════════════════════════════ */
+
+/* --- Animações de virada (definidas UMA vez) --- */
+@keyframes flipInFromRight  { 0%{transform:translateX(55px) rotateY(-10deg);opacity:0} 100%{transform:none;opacity:1} }
+@keyframes flipOutToLeft    { 0%{transform:none;opacity:1} 100%{transform:translateX(-55px) rotateY(10deg);opacity:0} }
+@keyframes flipInFromLeft   { 0%{transform:translateX(-55px) rotateY(10deg);opacity:0} 100%{transform:none;opacity:1} }
+@keyframes flipOutToRight   { 0%{transform:none;opacity:1} 100%{transform:translateX(55px) rotateY(-10deg);opacity:0} }
+
+/* --- HORIZONTAL --- */
+.reader-pages-horizontal {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.page-slot {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;   /* impede imagens de vazar para fora */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.page-img {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  margin: auto;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  -webkit-user-drag: none;
+  user-select: none;
+  background: #000;
+}
+.page-img.enter-next { animation: flipInFromRight 200ms var(--ease) forwards; }
+.page-img.leave-next { animation: flipOutToLeft   160ms ease-in    forwards; }
+.page-img.enter-prev { animation: flipInFromLeft  200ms var(--ease) forwards; }
+.page-img.leave-prev { animation: flipOutToRight  160ms ease-in    forwards; }
+
+/* Fullscreen */
+:-webkit-full-screen .page-img { max-height: 100vh; }
+:fullscreen          .page-img { max-height: 100vh; }
+
+/* Zones de tap (invisíveis) */
+.tap-zone {
+  position: absolute;
+  top: 56px;
+  bottom: 68px;
+  width: 38%;
+  z-index: 5;
+  cursor: pointer;
+}
+.tap-prev { left: 0; }
+.tap-next  { right: 0; }
+
+/* Esconde botões nav antigos */
 .reader-nav-btn { display: none !important; }
 
-/* ── READER VERTICAL — uma página por vez ── */
+/* --- VERTICAL --- */
 .reader-pages-vertical {
   flex: 1;
+  width: 100%;
+  height: 100%;
   overflow-y: scroll;
   overflow-x: hidden;
   scroll-snap-type: y mandatory;
   -webkit-overflow-scrolling: touch;
   background: #000;
-  height: 100%;
 }
 .reader-pages-vertical img {
   display: block;
-  width: 100%;
-  max-width: 860px;
-  margin: 0 auto;
+  width: 100vw;
   height: calc(100vh - 56px - 68px);
   object-fit: contain;
+  object-position: center;
   scroll-snap-align: start;
   scroll-snap-stop: always;
   background: #000;
+  flex-shrink: 0;
 }
