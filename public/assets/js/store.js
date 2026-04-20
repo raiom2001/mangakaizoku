@@ -37,7 +37,7 @@ const Store = (() => {
   function setTheme(t) { set(KEYS.THEME, t); }
 
   // ── Reader Mode ──────────────────────────────────────
-  function getReaderMode() { return get(KEYS.READER_MODE, 'vertical'); }
+  function getReaderMode() { return get(KEYS.READER_MODE, 'horizontal'); }
   function setReaderMode(m) { set(KEYS.READER_MODE, m); }
 
   // ── Preferred Language ───────────────────────────────

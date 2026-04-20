@@ -443,8 +443,8 @@ async function renderReader({ chapterId }) {
         <button class="reader-back-btn" id="readerBack" aria-label="Voltar">${BACK_SVG}</button>
         <div class="reader-title">${mTitle}</div>
         <div class="reader-actions">
-          <button class="reader-btn" id="readerModeBtn">
-            ${RS.mode === 'vertical' ? VERT_SVG + ' Vertical' : HORZ_SVG + ' Horizontal'}
+          <button class="reader-btn" id="readerModeBtn" title="Alternar modo de leitura">
+            ${RS.mode === 'vertical' ? HORZ_SVG + ' Horizontal' : VERT_SVG + ' Vertical'}
           </button>
           <button class="reader-fullscreen-btn" id="readerFullscreen" title="Tela cheia">${FS_ENTER}</button>
         </div>
@@ -474,7 +474,7 @@ async function renderReader({ chapterId }) {
     RS.mode = RS.mode === 'vertical' ? 'horizontal' : 'vertical';
     Store.setReaderMode(RS.mode);
     const btn = document.getElementById('readerModeBtn');
-    if (btn) btn.innerHTML = RS.mode === 'vertical' ? VERT_SVG + ' Vertical' : HORZ_SVG + ' Horizontal';
+    if (btn) btn.innerHTML = RS.mode === 'vertical' ? HORZ_SVG + ' Horizontal' : VERT_SVG + ' Vertical';
     renderReaderPages();
   });
 
