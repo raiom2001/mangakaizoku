@@ -40,7 +40,7 @@ async function renderHome() {
   app.innerHTML = `
     <div class="home-banner">
       <div class="banner-particles" id="bannerParticles"></div>
-      <img src="./assets/img/logo.png" alt="" class="banner-logo-img" loading="lazy"><div class="banner-content">
+      <img src="./logo.png" alt="" class="banner-logo-img" loading="lazy"><div class="banner-content">
         <div class="banner-eyebrow">Piratas &amp; Samurais</div>
         <h1 class="banner-title">Sua tripulacao de<br><span>mangas favoritos</span></h1>
         <p class="banner-desc">Explore milhares de obras. Do shonen ao seinen — navegue sem limites.</p>
