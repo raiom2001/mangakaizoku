@@ -654,7 +654,7 @@ body.reader-mode{padding-top:0;overflow:hidden}
 .toast.info{background:rgba(20,18,10,.95);color:var(--gold);border-color:var(--gold)}
 .toast.hiding{animation:slideOutToast .28s ease forwards}
 to{transform:translateX(0);opacity:1}}
-@keyframes slideOutToast{from{transform:translateX(0);opacity:1}to{transform:translateX(110%);opacity:0}}
+to{transform:translateX(110%);opacity:0}}
 
 /* ── HISTORY ───────────────────────────────────────── */
 .history-list{display:flex;flex-direction:column;gap:6px}
@@ -910,47 +910,78 @@ to{transform:translateX(0);opacity:1}}
 ═══════════════════════════════════════════ */
 
 /* Container principal */
+
+/* ---- MODO HORIZONTAL ---- */
+.mk-pages
+
+.mk-pages.mk-horizontal 
+
+.mk-pages.mk-horizontal 
+
+/* ---- MODO VERTICAL ---- */
+.mk-pages
+
+.mk-pages.mk-vertical 
+
+.mk-pages.mk-vertical 
+
+/* ---- TAP ZONES (horizontal) ---- */
+
+/* Esconde botões antigos */
+
+/* ═══════════════════════════════════════════════
+   LEITOR MANGA
+═══════════════════════════════════════════════ */
+
+/* Container do conteúdo */
 #readerContent {
   flex: 1;
+  position: relative;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  height: calc(var(--vh,1vh)*100 - 56px - 68px);
   background: #000;
+  height: calc(var(--vh,1vh)*100 - 56px - 68px);
 }
 
-.mk-reader {
+/* ── VERTICAL ── */
+.pages-vertical {
+  width: 100%;
+  height: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: #000;
+  scroll-behavior: smooth;
+}
+.pages-vertical img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: #000;
+  border-bottom: 2px solid #000;
+}
+
+/* ── HORIZONTAL ── */
+.pages-horizontal {
   position: relative;
   width: 100%;
   height: 100%;
   background: #000;
   overflow: hidden;
 }
-
-/* ---- MODO HORIZONTAL ---- */
-.mk-pages.mk-horizontal {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  height: 100%;
-  overflow: hidden; /* JS controla scroll */
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-}
-
-.mk-pages.mk-horizontal .mk-page {
-  flex: 0 0 100%;
-  width: 100%;
-  height: 100%;
-  display: flex;
+.page-slide {
+  position: absolute;
+  inset: 0;
+  display: none;
   align-items: center;
   justify-content: center;
   background: #000;
-  scroll-snap-align: start;
-  overflow: hidden;
 }
-
-.mk-pages.mk-horizontal .mk-page img {
+.page-slide.active {
+  display: flex;
+}
+.page-slide img {
   max-width: 100%;
   max-height: 100%;
   width: auto;
@@ -961,56 +992,23 @@ to{transform:translateX(0);opacity:1}}
   user-select: none;
 }
 
-/* ---- MODO VERTICAL ---- */
-.mk-pages.mk-vertical {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  scroll-snap-type: y mandatory;
-  -webkit-overflow-scrolling: touch;
-  background: #000;
-}
+/* Animações entrada */
+@keyframes slideFromRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes slideFromLeft  { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+.page-slide.anim-next { animation: slideFromRight 180ms ease forwards; }
+.page-slide.anim-prev { animation: slideFromLeft  180ms ease forwards; }
 
-.mk-pages.mk-vertical .mk-page {
-  flex: 0 0 calc(var(--vh,1vh)*100 - 56px - 68px);
-  width: 100%;
-  height: calc(var(--vh,1vh)*100 - 56px - 68px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  overflow: hidden;
-}
-
-.mk-pages.mk-vertical .mk-page img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  display: block;
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-/* ---- TAP ZONES (horizontal) ---- */
-.mk-tap {
+/* ── TAP ZONES ── */
+.tap-prev, .tap-next {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 35%;
-  z-index: 10;
+  z-index: 20;
   cursor: pointer;
-  display: none;
 }
-.mk-tap-prev { left: 0; }
-.mk-tap-next { right: 0; }
+.tap-prev { left: 0; }
+.tap-next  { right: 0; }
 
 /* Esconde botões antigos */
 .reader-nav-btn { display: none !important; }
-.tap-zone       { display: none !important; }
