@@ -1,11 +1,3 @@
-
-// Fix altura real no mobile
-function setVH() {
-  document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
-}
-setVH();
-window.addEventListener('resize', setVH);
-
 /* MangaKaizoku — app.js */
 
 // ── Theme ─────────────────────────────────────────────
@@ -451,8 +443,8 @@ async function renderReader({ chapterId }) {
         <button class="reader-back-btn" id="readerBack" aria-label="Voltar">${BACK_SVG}</button>
         <div class="reader-title">${mTitle}</div>
         <div class="reader-actions">
-          <button class="reader-btn" id="readerModeBtn" title="Alternar modo de leitura">
-            ${RS.mode === 'vertical' ? HORZ_SVG + ' Horizontal' : VERT_SVG + ' Vertical'}
+          <button class="reader-btn" id="readerModeBtn">
+            ${RS.mode === 'vertical' ? VERT_SVG + ' Vertical' : HORZ_SVG + ' Horizontal'}
           </button>
           <button class="reader-fullscreen-btn" id="readerFullscreen" title="Tela cheia">${FS_ENTER}</button>
         </div>
@@ -482,7 +474,7 @@ async function renderReader({ chapterId }) {
     RS.mode = RS.mode === 'vertical' ? 'horizontal' : 'vertical';
     Store.setReaderMode(RS.mode);
     const btn = document.getElementById('readerModeBtn');
-    if (btn) btn.innerHTML = RS.mode === 'vertical' ? HORZ_SVG + ' Horizontal' : VERT_SVG + ' Vertical';
+    if (btn) btn.innerHTML = RS.mode === 'vertical' ? VERT_SVG + ' Vertical' : HORZ_SVG + ' Horizontal';
     renderReaderPages();
   });
 
@@ -495,7 +487,8 @@ async function renderReader({ chapterId }) {
 
   document.getElementById('readerProgress')?.addEventListener('input', e => {
     const idx = parseInt(e.target.value) - 1;
-    goToPage(idx);
+    if (RS.mode === 'horizontal') animatePage(idx, idx > RS.current ? 'next' : 'prev', true);
+    else scrollToPage(idx);
   });
 
   try {
@@ -518,114 +511,153 @@ async function renderReader({ chapterId }) {
 }
 
 function renderReaderPages() {
-  const cnt = document.getElementById('readerContent');
-  if (!cnt || !RS.pages.length) return;
+  const content = document.getElementById('readerContent');
+  if (!content || !RS.pages.length) return;
 
-  const modeClass = RS.mode === 'vertical' ? 'mk-vertical' : 'mk-horizontal';
-  const tapDisplay = RS.mode === 'horizontal' ? 'display:block' : 'display:none';
-  cnt.innerHTML = '<div class="mk-reader" id="mkReader">'
-    + '<div class="mk-pages ' + modeClass + '" id="mkPages"></div>'
-    + '<div class="mk-tap mk-tap-prev" id="mkTapPrev" style="' + tapDisplay + '"></div>'
-    + '<div class="mk-tap mk-tap-next" id="mkTapNext" style="' + tapDisplay + '"></div>'
-    + '</div>';
-
-  const container = document.getElementById('mkPages');
-
-  RS.pages.forEach((url, i) => {
-    const div = document.createElement('div');
-    div.className = 'mk-page';
-    div.dataset.index = i;
-    const img = document.createElement('img');
-    img.alt = 'Pagina ' + (i + 1);
-    img.src = url; // carrega todas — sem lazy que quebra
-    img.onerror = () => { img.style.opacity = '0.15'; };
-    div.appendChild(img);
-    container.appendChild(div);
-  });
-
-  updatePageCount();
-  goToPageInstant(RS.current);
-
-  // Tap zones horizontal
-  document.getElementById('mkTapPrev')?.addEventListener('click', () => goToPage(RS.current - 1));
-  document.getElementById('mkTapNext')?.addEventListener('click', () => goToPage(RS.current + 1));
-
-  // Swipe touch
-  let tx = 0, ty = 0;
-  container.addEventListener('touchstart', e => {
-    tx = e.touches[0].clientX;
-    ty = e.touches[0].clientY;
-  }, { passive: true });
-  container.addEventListener('touchend', e => {
-    const dx = tx - e.changedTouches[0].clientX;
-    const dy = Math.abs(ty - e.changedTouches[0].clientY);
-    if (RS.mode === 'horizontal' && Math.abs(dx) > 35 && Math.abs(dx) > dy) {
-      goToPage(dx > 0 ? RS.current + 1 : RS.current - 1);
-    }
-  }, { passive: true });
-
-  // Scroll vertical detecta página
   if (RS.mode === 'vertical') {
-    let lastScroll = 0;
-    container.addEventListener('scroll', () => {
-      const pages = container.querySelectorAll('.mk-page');
-      let closest = 0, minDist = Infinity;
-      pages.forEach((p, i) => {
-        const dist = Math.abs(p.getBoundingClientRect().top);
-        if (dist < minDist) { minDist = dist; closest = i; }
-      });
-      RS.current = closest;
-      updatePageCount();
-      const going = container.scrollTop > lastScroll + 5;
-      if (Math.abs(container.scrollTop - lastScroll) > 10) {
-        document.getElementById('readerHeader')?.classList.toggle('hidden', going);
-        document.getElementById('readerFooter')?.classList.toggle('hidden', going);
-        lastScroll = container.scrollTop;
-      }
-    }, { passive: true });
-  }
-
-  initKeyboard();
-}
-
-function goToPageInstant(index) {
-  const container = document.getElementById('mkPages');
-  if (!container) return;
-  const pages = container.querySelectorAll('.mk-page');
-  if (!pages[index]) return;
-  if (RS.mode === 'vertical') {
-    pages[index].scrollIntoView({ block: 'start' });
+    content.innerHTML = `
+      <div class="reader-pages-vertical" id="pagesVertical">
+        ${RS.pages.map((p, i) => `
+          <img src="${p}" alt="Pagina ${i + 1}" loading="lazy"
+            width="860" height="1230" data-index="${i}"
+            onerror="this.style.opacity='0.2'" />
+        `).join('')}
+      </div>
+    `;
+    initVerticalObserver();
+    initReaderScroll();
   } else {
-    container.scrollLeft = pages[index].offsetLeft;
+    content.innerHTML = `
+      <div class="reader-pages-horizontal" id="pagesHorizontal">
+        <div class="page-slot" id="pageSlot">
+          <img class="page-img" id="currentPageImg"
+            src="${RS.pages[RS.current]}" alt="Pagina ${RS.current + 1}"
+            width="860" height="1230" onerror="this.style.opacity='0.2'" />
+        </div>
+        <div class="tap-zone tap-prev" id="tapPrev"></div>
+        <div class="tap-zone tap-next" id="tapNext"></div>
+      </div>
+    `;
+    document.getElementById('tapPrev')?.addEventListener('click', () => goToPage(RS.current - 1, 'prev'));
+    document.getElementById('tapNext')?.addEventListener('click', () => goToPage(RS.current + 1, 'next'));
+    initTouchSwipe();
+    initKeyboard();
   }
 }
 
-function goToPage(index) {
-  if (index < 0 || index >= RS.pages.length) return;
-  RS.current = index;
+// Animação de virada de página
+let _animating = false;
+
+function animatePage(newIndex, direction, skipAnim = false) {
+  if (_animating) return;
+  if (newIndex < 0 || newIndex >= RS.pages.length) return;
+  if (newIndex === RS.current) return;
+
+  const slot = document.getElementById('pageSlot');
+  if (!slot) { RS.current = newIndex; updatePageCount(); return; }
+
+  if (skipAnim) {
+    const img = document.getElementById('currentPageImg');
+    if (img) { img.src = RS.pages[newIndex]; img.alt = `Pagina ${newIndex + 1}`; }
+    RS.current = newIndex;
+    updatePageCount();
+    return;
+  }
+
+  _animating = true;
+
+  const oldImg = document.getElementById('currentPageImg');
+  const leaveClass = direction === 'next' ? 'leave-next' : 'leave-prev';
+  const enterClass = direction === 'next' ? 'enter-next' : 'enter-prev';
+
+  // Cria nova imagem
+  const newImg = document.createElement('img');
+  newImg.className = `page-img ${enterClass}`;
+  newImg.src = RS.pages[newIndex];
+  newImg.alt = `Pagina ${newIndex + 1}`;
+  newImg.width = 860;
+  newImg.height = 1230;
+  newImg.onerror = () => { newImg.style.opacity = '0.2'; };
+
+  // Anima saída da atual
+  if (oldImg) oldImg.classList.add(leaveClass);
+
+  slot.appendChild(newImg);
+  RS.current = newIndex;
   updatePageCount();
-  goToPageInstant(index);
+
+  const duration = 230;
+  setTimeout(() => {
+    oldImg?.remove();
+    newImg.className = 'page-img';
+    _animating = false;
+  }, duration);
 }
-
-
-
 
 function goToPage(index, direction) {
-  const clamped = Math.max(0, Math.min(index, RS.pages.length - 1));
-  if (RS.swiper && !RS.swiper.destroyed) {
-    RS.swiper.slideTo(clamped);
-  } else {
-    const dir = direction || (index > RS.current ? 'next' : 'prev');
-    animatePage(clamped, dir);
-  }
+  const dir = direction || (index > RS.current ? 'next' : 'prev');
+  animatePage(Math.max(0, Math.min(index, RS.pages.length - 1)), dir);
 }
 
+function scrollToPage(index) {
+  const container = document.getElementById('pagesVertical');
+  if (!container) return;
+  const imgs = container.querySelectorAll('img');
+  if (imgs[index]) imgs[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  RS.current = index;
+  updatePageCount();
+}
 
 function updatePageCount() {
   const el   = document.getElementById('pageCount');
   const prog = document.getElementById('readerProgress');
   if (el)   el.textContent = `${RS.current + 1} / ${RS.pages.length}`;
   if (prog) prog.value = RS.current + 1;
+}
+
+function initVerticalObserver() {
+  const container = document.getElementById('pagesVertical');
+  if (!container) return;
+  const imgs = container.querySelectorAll('img');
+  const obs  = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const idx = parseInt(e.target.dataset.index);
+        if (!isNaN(idx)) { RS.current = idx; updatePageCount(); }
+      }
+    });
+  }, { threshold: 0.4, rootMargin: '-25% 0px -25% 0px' });
+  imgs.forEach(img => obs.observe(img));
+}
+
+function initReaderScroll() {
+  const container = document.getElementById('pagesVertical');
+  if (!container) return;
+  let lastY = 0;
+  container.addEventListener('scroll', () => {
+    const y    = container.scrollTop;
+    const going = y > lastY && y > 60;
+    document.getElementById('readerHeader')?.classList.toggle('hidden', going);
+    document.getElementById('readerFooter')?.classList.toggle('hidden', going);
+    lastY = y;
+  }, { passive: true });
+}
+
+function initTouchSwipe() {
+  const wrap = document.getElementById('pagesHorizontal');
+  if (!wrap) return;
+  let startX = 0, startY = 0;
+  wrap.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  wrap.addEventListener('touchend', e => {
+    const dx = startX - e.changedTouches[0].clientX;
+    const dy = Math.abs(startY - e.changedTouches[0].clientY);
+    if (Math.abs(dx) > 30 && Math.abs(dx) > dy) {
+      goToPage(dx > 0 ? RS.current + 1 : RS.current - 1, dx > 0 ? 'next' : 'prev');
+    }
+  }, { passive: true });
 }
 
 function initKeyboard() {
@@ -668,7 +700,6 @@ function onFullscreenChange() {
 }
 
 function exitReader() {
-  if (RS.swiper && !RS.swiper.destroyed) { RS.swiper.destroy(true, true); RS.swiper = null; }
   document.body.classList.remove('reader-mode');
   const exit = document.exitFullscreen || document.webkitExitFullscreen;
   if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) exit.call(document).catch(() => {});
