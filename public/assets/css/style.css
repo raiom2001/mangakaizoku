@@ -935,10 +935,10 @@ body.reader-mode{padding-top:0;overflow:hidden}
 /* Zonas de tap invisíveis */
 .tap-zone {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 40%;
-  z-index: 10;
+  top: 56px;      /* abaixo do header */
+  bottom: 68px;   /* acima do footer */
+  width: 38%;
+  z-index: 5;     /* abaixo do header (z-index:10) */
   cursor: pointer;
 }
 .tap-prev { left: 0; }
