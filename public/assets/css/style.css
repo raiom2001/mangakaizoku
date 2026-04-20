@@ -824,3 +824,85 @@ body.reader-mode{padding-top:0;overflow:hidden}
 @media (max-width: 360px) {
   .logo-name { font-size: 13px; }
 }
+
+/* ===== HOME BANNER ===== */
+.home-banner {
+  position: relative;
+  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-alt) 60%, #0a0a18 100%);
+  padding: 48px 20px 64px;
+  margin: -28px -20px 48px;
+  overflow: hidden;
+}
+.home-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 80% 50%, rgba(201,168,76,.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 10% 80%, rgba(200,48,42,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.home-banner::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 60px;
+  background: var(--bg);
+  clip-path: polygon(0 60px, 100% 0, 100% 60px);
+}
+.banner-content {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.banner-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--red);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.banner-eyebrow::before {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 1px;
+  background: var(--red);
+  flex-shrink: 0;
+}
+.banner-title {
+  font-family: 'Cinzel', 'Palatino Linotype', Palatino, serif;
+  font-size: clamp(28px, 6vw, 52px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  margin: 0;
+}
+.banner-title span {
+  display: block;
+  background: linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #c8302a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+.banner-desc {
+  font-family: 'Shippori Mincho', Georgia, serif;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.8;
+  max-width: 460px;
+  margin-top: 4px;
+}
+@media (max-width: 480px) {
+  .home-banner { padding: 36px 16px 52px; margin: -20px -20px 36px; }
+  .banner-title { font-size: 26px; }
+  .banner-desc { font-size: 13px; }
+}
