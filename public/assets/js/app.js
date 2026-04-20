@@ -536,19 +536,37 @@ function renderReaderPages() {
     initReaderScroll();
   } else {
     content.innerHTML = `
-      <div class="reader-pages-horizontal" id="pagesHorizontal">
-        <div class="page-slot" id="pageSlot">
-          <img class="page-img" id="currentPageImg"
-            src="${RS.pages[RS.current]}" alt="Pagina ${RS.current + 1}"
-            width="860" height="1230" onerror="this.style.opacity='0.2'" />
+      <div class="swiper reader-swiper" id="readerSwiper">
+        <div class="swiper-wrapper">
+          ${RS.pages.map((p, i) => `
+            <div class="swiper-slide reader-slide">
+              <img src="${i === 0 ? p : ''}" data-src="${p}"
+                alt="Pagina ${i + 1}"
+                class="swiper-lazy"
+                onerror="this.style.opacity='0.2'" />
+              <div class="swiper-lazy-preloader swiper-lazy-preloader-black"></div>
+            </div>
+          `).join('')}
         </div>
-        <div class="tap-zone tap-prev" id="tapPrev"></div>
-        <div class="tap-zone tap-next" id="tapNext"></div>
       </div>
     `;
-    document.getElementById('tapPrev')?.addEventListener('click', () => goToPage(RS.current - 1, 'prev'));
-    document.getElementById('tapNext')?.addEventListener('click', () => goToPage(RS.current + 1, 'next'));
-    initTouchSwipe();
+
+    RS.swiper = new Swiper('#readerSwiper', {
+      direction: 'horizontal',
+      slidesPerView: 1,
+      spaceBetween: 0,
+      lazy: { loadPrevNext: true, loadPrevNextAmount: 1 },
+      keyboard: { enabled: true },
+      preloadImages: false,
+      initialSlide: RS.current,
+      on: {
+        slideChange(sw) {
+          RS.current = sw.activeIndex;
+          updatePageCount();
+        }
+      }
+    });
+
     initKeyboard();
   }
 }
@@ -593,8 +611,13 @@ function animatePage(newIndex, direction, skipAnim = false) {
 }
 
 function goToPage(index, direction) {
-  const dir = direction || (index > RS.current ? 'next' : 'prev');
-  animatePage(Math.max(0, Math.min(index, RS.pages.length - 1)), dir);
+  const clamped = Math.max(0, Math.min(index, RS.pages.length - 1));
+  if (RS.swiper && !RS.swiper.destroyed) {
+    RS.swiper.slideTo(clamped);
+  } else {
+    const dir = direction || (index > RS.current ? 'next' : 'prev');
+    animatePage(clamped, dir);
+  }
 }
 
 function scrollToPage(index) {
@@ -698,6 +721,7 @@ function onFullscreenChange() {
 }
 
 function exitReader() {
+  if (RS.swiper && !RS.swiper.destroyed) { RS.swiper.destroy(true, true); RS.swiper = null; }
   document.body.classList.remove('reader-mode');
   const exit = document.exitFullscreen || document.webkitExitFullscreen;
   if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) exit.call(document).catch(() => {});
