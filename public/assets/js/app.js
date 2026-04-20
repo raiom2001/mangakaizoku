@@ -529,17 +529,17 @@ function renderReaderPages() {
   } else {
     content.innerHTML = `
       <div class="reader-pages-horizontal" id="pagesHorizontal">
-        <button class="reader-nav-btn prev" id="prevPage" aria-label="Pagina anterior">&#8249;</button>
         <div class="page-slot" id="pageSlot">
           <img class="page-img" id="currentPageImg"
             src="${RS.pages[RS.current]}" alt="Pagina ${RS.current + 1}"
             width="860" height="1230" onerror="this.style.opacity='0.2'" />
         </div>
-        <button class="reader-nav-btn next" id="nextPage" aria-label="Proxima pagina">&#8250;</button>
+        <div class="tap-zone tap-prev" id="tapPrev"></div>
+        <div class="tap-zone tap-next" id="tapNext"></div>
       </div>
     `;
-    document.getElementById('prevPage')?.addEventListener('click', () => goToPage(RS.current - 1, 'prev'));
-    document.getElementById('nextPage')?.addEventListener('click', () => goToPage(RS.current + 1, 'next'));
+    document.getElementById('tapPrev')?.addEventListener('click', () => goToPage(RS.current - 1, 'prev'));
+    document.getElementById('tapNext')?.addEventListener('click', () => goToPage(RS.current + 1, 'next'));
     initTouchSwipe();
     initKeyboard();
   }
@@ -646,10 +646,17 @@ function initReaderScroll() {
 function initTouchSwipe() {
   const wrap = document.getElementById('pagesHorizontal');
   if (!wrap) return;
-  wrap.addEventListener('touchstart', e => { RS.touchStartX = e.touches[0].clientX; }, { passive: true });
+  let startX = 0, startY = 0;
+  wrap.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
   wrap.addEventListener('touchend', e => {
-    const diff = RS.touchStartX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) goToPage(diff > 0 ? RS.current + 1 : RS.current - 1, diff > 0 ? 'next' : 'prev');
+    const dx = startX - e.changedTouches[0].clientX;
+    const dy = Math.abs(startY - e.changedTouches[0].clientY);
+    if (Math.abs(dx) > 30 && Math.abs(dx) > dy) {
+      goToPage(dx > 0 ? RS.current + 1 : RS.current - 1, dx > 0 ? 'next' : 'prev');
+    }
   }, { passive: true });
 }
 

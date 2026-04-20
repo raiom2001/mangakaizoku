@@ -610,9 +610,9 @@ body.reader-mode{padding-top:0;overflow:hidden}
 .reader-btn:hover{background:rgba(201,168,76,.15);border-color:var(--gold);color:var(--gold)}
 .reader-pages-vertical{flex:1;overflow-y:auto;overflow-x:hidden;padding-top:56px;padding-bottom:72px}
 .reader-pages-vertical img{display:block;width:100%;max-width:860px;margin:0 auto;height:auto}
-.reader-pages-horizontal{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;padding-top:56px;padding-bottom:72px}
-.page-slot{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;perspective:1200px}
-.page-img{max-width:100%;max-height:100%;object-fit:contain;position:absolute;-webkit-user-drag:none}
+
+
+
 @keyframes flipInFromRight{0%{transform:translateX(60px) rotateY(-12deg);opacity:0}100%{transform:translateX(0) rotateY(0);opacity:1}}
 @keyframes flipOutToLeft{0%{transform:translateX(0) rotateY(0);opacity:1}100%{transform:translateX(-60px) rotateY(12deg);opacity:0}}
 @keyframes flipInFromLeft{0%{transform:translateX(-60px) rotateY(12deg);opacity:0}100%{transform:translateX(0) rotateY(0);opacity:1}}
@@ -621,14 +621,7 @@ body.reader-mode{padding-top:0;overflow:hidden}
 .page-img.leave-next{animation:flipOutToLeft 180ms ease-in forwards}
 .page-img.enter-prev{animation:flipInFromLeft 220ms var(--ease) forwards}
 .page-img.leave-prev{animation:flipOutToRight 180ms ease-in forwards}
-.reader-nav-btn{
-  position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(4,4,10,.75);border:1px solid rgba(201,168,76,.2);color:var(--gold);
-  width:44px;height:88px;border-radius:var(--r-sm);cursor:pointer;
-  transition:background var(--t),border-color var(--t),transform 200ms;
-  z-index:5;display:flex;align-items:center;justify-content:center;font-size:22px;
-  backdrop-filter:blur(4px);
-}
+
 .reader-nav-btn:hover{background:rgba(201,168,76,.15);border-color:var(--gold);transform:translateY(-50%) scaleY(1.04)}
 .reader-nav-btn.prev{left:10px}
 .reader-nav-btn.next{right:10px}
@@ -906,3 +899,64 @@ body.reader-mode{padding-top:0;overflow:hidden}
   .banner-title { font-size: 26px; }
   .banner-desc { font-size: 13px; }
 }
+
+/* ── READER HORIZONTAL MANGA ──────────────────────── */
+.reader-pages-horizontal {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  background: #000;
+  width: 100%;
+  height: 100%;
+}
+.page-slot {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+.page-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+  position: absolute;
+  display: block;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+/* Zonas de tap invisíveis */
+.tap-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  z-index: 10;
+  cursor: pointer;
+}
+.tap-prev { left: 0; }
+.tap-next  { right: 0; }
+
+/* Animações de virada */
+@keyframes flipInFromRight  { 0%{transform:translateX(60px) rotateY(-10deg);opacity:0} 100%{transform:translateX(0) rotateY(0);opacity:1} }
+@keyframes flipOutToLeft    { 0%{transform:translateX(0) rotateY(0);opacity:1} 100%{transform:translateX(-60px) rotateY(10deg);opacity:0} }
+@keyframes flipInFromLeft   { 0%{transform:translateX(-60px) rotateY(10deg);opacity:0} 100%{transform:translateX(0) rotateY(0);opacity:1} }
+@keyframes flipOutToRight   { 0%{transform:translateX(0) rotateY(0);opacity:1} 100%{transform:translateX(60px) rotateY(-10deg);opacity:0} }
+.page-img.enter-next  { animation: flipInFromRight  200ms var(--ease) forwards; }
+.page-img.leave-next  { animation: flipOutToLeft    160ms ease-in    forwards; }
+.page-img.enter-prev  { animation: flipInFromLeft   200ms var(--ease) forwards; }
+.page-img.leave-prev  { animation: flipOutToRight   160ms ease-in    forwards; }
+
+/* Modo fullscreen — imagem ocupa tudo */
+:-webkit-full-screen .page-img { height: 100vh; max-height: 100vh; }
+:fullscreen         .page-img { height: 100vh; max-height: 100vh; }
+
+/* Remove botões nav antigos se existirem */
+.reader-nav-btn { display: none !important; }
