@@ -495,8 +495,7 @@ async function renderReader({ chapterId }) {
 
   document.getElementById('readerProgress')?.addEventListener('input', e => {
     const idx = parseInt(e.target.value) - 1;
-    if (RS.mode === 'horizontal') animatePage(idx, idx > RS.current ? 'next' : 'prev', true);
-    else scrollToPage(idx);
+    goToPage(idx);
   });
 
   try {
@@ -519,119 +518,97 @@ async function renderReader({ chapterId }) {
 }
 
 function renderReaderPages() {
-  const content = document.getElementById('readerContent');
-  if (!content || !RS.pages.length) return;
+  const cnt = document.getElementById('readerContent');
+  if (!cnt || !RS.pages.length) return;
 
-  if (RS.mode === 'vertical') {
-    content.innerHTML = `
-      <div class="swiper reader-swiper" id="readerSwiperV">
-        <div class="swiper-wrapper">
-          ${RS.pages.map((p, i) => `
-            <div class="swiper-slide reader-slide">
-              <img src="${i === 0 ? p : ''}" data-src="${p}"
-                alt="Pagina ${i + 1}"
-                class="swiper-lazy"
-                onerror="this.style.opacity='0.2'" />
-              <div class="swiper-lazy-preloader"></div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+  cnt.innerHTML = `
+    <div class="mk-reader" id="mkReader">
+      <div class="mk-pages ${RS.mode === 'vertical' ? 'mk-vertical' : 'mk-horizontal'}" id="mkPages"></div>
+      <div class="mk-tap mk-tap-prev" id="mkTapPrev" style="${RS.mode === 'horizontal' ? 'display:block' : 'display:none'}"></div>
+      <div class="mk-tap mk-tap-next" id="mkTapNext" style="${RS.mode === 'horizontal' ? 'display:block' : 'display:none'}"></div>
+    </div>
+  `;
 
-    RS.swiper = new Swiper('#readerSwiperV', {
-      direction: 'vertical',
-      slidesPerView: 1,
-      spaceBetween: 0,
-      lazy: { loadPrevNext: true, loadPrevNextAmount: 1 },
-      keyboard: { enabled: true },
-      preloadImages: false,
-      mousewheel: true,
-      initialSlide: RS.current,
-      on: {
-        slideChange(sw) {
-          RS.current = sw.activeIndex;
-          updatePageCount();
-        }
-      }
-    });
+  const container = document.getElementById('mkPages');
 
-    initKeyboard();
-  } else {
-    content.innerHTML = `
-      <div class="swiper reader-swiper" id="readerSwiper">
-        <div class="swiper-wrapper">
-          ${RS.pages.map((p, i) => `
-            <div class="swiper-slide reader-slide">
-              <img src="${i === 0 ? p : ''}" data-src="${p}"
-                alt="Pagina ${i + 1}"
-                class="swiper-lazy"
-                onerror="this.style.opacity='0.2'" />
-              <div class="swiper-lazy-preloader swiper-lazy-preloader-black"></div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+  RS.pages.forEach((url, i) => {
+    const div = document.createElement('div');
+    div.className = 'mk-page';
+    div.dataset.index = i;
+    const img = document.createElement('img');
+    img.alt = 'Pagina ' + (i + 1);
+    img.src = url; // carrega todas — sem lazy que quebra
+    img.onerror = () => { img.style.opacity = '0.15'; };
+    div.appendChild(img);
+    container.appendChild(div);
+  });
 
-    RS.swiper = new Swiper('#readerSwiper', {
-      direction: 'horizontal',
-      slidesPerView: 1,
-      spaceBetween: 0,
-      lazy: { loadPrevNext: true, loadPrevNextAmount: 1 },
-      keyboard: { enabled: true },
-      preloadImages: false,
-      initialSlide: RS.current,
-      on: {
-        slideChange(sw) {
-          RS.current = sw.activeIndex;
-          updatePageCount();
-        }
-      }
-    });
-
-    initKeyboard();
-  }
-}
-
-// Animação de virada de página
-let _animating = false;
-
-function animatePage(newIndex, direction, skipAnim = false) {
-  if (_animating) return;
-  if (newIndex < 0 || newIndex >= RS.pages.length) return;
-  if (newIndex === RS.current) return;
-
-  const slot = document.getElementById('pageSlot');
-  if (!slot) { RS.current = newIndex; updatePageCount(); return; }
-
-  RS.current = newIndex;
   updatePageCount();
+  goToPageInstant(RS.current);
 
-  // Troca direta sem animação (barra de progresso)
-  if (skipAnim) {
-    slot.innerHTML = `<img class="page-img" id="currentPageImg"
-      src="${RS.pages[newIndex]}" alt="Pagina ${newIndex + 1}"
-      width="860" height="1230" onerror="this.style.opacity='0.2'" />`;
-    return;
+  // Tap zones horizontal
+  document.getElementById('mkTapPrev')?.addEventListener('click', () => goToPage(RS.current - 1));
+  document.getElementById('mkTapNext')?.addEventListener('click', () => goToPage(RS.current + 1));
+
+  // Swipe touch
+  let tx = 0, ty = 0;
+  container.addEventListener('touchstart', e => {
+    tx = e.touches[0].clientX;
+    ty = e.touches[0].clientY;
+  }, { passive: true });
+  container.addEventListener('touchend', e => {
+    const dx = tx - e.changedTouches[0].clientX;
+    const dy = Math.abs(ty - e.changedTouches[0].clientY);
+    if (RS.mode === 'horizontal' && Math.abs(dx) > 35 && Math.abs(dx) > dy) {
+      goToPage(dx > 0 ? RS.current + 1 : RS.current - 1);
+    }
+  }, { passive: true });
+
+  // Scroll vertical detecta página
+  if (RS.mode === 'vertical') {
+    let lastScroll = 0;
+    container.addEventListener('scroll', () => {
+      const pages = container.querySelectorAll('.mk-page');
+      let closest = 0, minDist = Infinity;
+      pages.forEach((p, i) => {
+        const dist = Math.abs(p.getBoundingClientRect().top);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      });
+      RS.current = closest;
+      updatePageCount();
+      const going = container.scrollTop > lastScroll + 5;
+      if (Math.abs(container.scrollTop - lastScroll) > 10) {
+        document.getElementById('readerHeader')?.classList.toggle('hidden', going);
+        document.getElementById('readerFooter')?.classList.toggle('hidden', going);
+        lastScroll = container.scrollTop;
+      }
+    }, { passive: true });
   }
 
-  _animating = true;
-
-  const enterClass = direction === 'next' ? 'enter-next' : 'enter-prev';
-
-  // Limpa slot imediatamente e coloca nova imagem
-  slot.innerHTML = `<img class="page-img ${enterClass}" id="currentPageImg"
-    src="${RS.pages[newIndex]}" alt="Pagina ${newIndex + 1}"
-    width="860" height="1230" onerror="this.style.opacity='0.2'" />`;
-
-  const newImg = document.getElementById('currentPageImg');
-
-  setTimeout(() => {
-    if (newImg) newImg.className = 'page-img';
-    _animating = false;
-  }, 220);
+  initKeyboard();
 }
+
+function goToPageInstant(index) {
+  const container = document.getElementById('mkPages');
+  if (!container) return;
+  const pages = container.querySelectorAll('.mk-page');
+  if (!pages[index]) return;
+  if (RS.mode === 'vertical') {
+    pages[index].scrollIntoView({ block: 'start' });
+  } else {
+    container.scrollLeft = pages[index].offsetLeft;
+  }
+}
+
+function goToPage(index) {
+  if (index < 0 || index >= RS.pages.length) return;
+  RS.current = index;
+  updatePageCount();
+  goToPageInstant(index);
+}
+
+
+
 
 function goToPage(index, direction) {
   const clamped = Math.max(0, Math.min(index, RS.pages.length - 1));
@@ -643,14 +620,6 @@ function goToPage(index, direction) {
   }
 }
 
-function scrollToPage(index) {
-  const container = document.getElementById('pagesVertical');
-  if (!container) return;
-  const imgs = container.querySelectorAll('img');
-  if (imgs[index]) imgs[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
-  RS.current = index;
-  updatePageCount();
-}
 
 function updatePageCount() {
   const el   = document.getElementById('pageCount');
