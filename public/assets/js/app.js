@@ -445,9 +445,7 @@ async function renderReader({ chapterId }) {
         <button class="reader-back-btn" id="readerBack">${BACK_SVG}</button>
         <div class="reader-title">${mTitle}</div>
         <div class="reader-actions">
-          <button class="reader-btn" id="readerModeBtn">
-            ${RS.mode === 'vertical' ? VERT_SVG + ' Vertical' : HORZ_SVG + ' Horizontal'}
-          </button>
+
           <button class="reader-fullscreen-btn" id="readerFullscreen">${FS_ENTER}</button>
         </div>
       </div>
@@ -472,14 +470,7 @@ async function renderReader({ chapterId }) {
     else history.back();
   });
 
-  document.getElementById('readerModeBtn')?.addEventListener('click', () => {
-    RS.mode = RS.mode === 'vertical' ? 'horizontal' : 'vertical';
-    Store.setReaderMode(RS.mode);
-    const btn = document.getElementById('readerModeBtn');
-    if (btn) btn.innerHTML = RS.mode === 'vertical' ? VERT_SVG + ' Vertical' : HORZ_SVG + ' Horizontal';
-    _animating = false;
-    renderReaderPages();
-  });
+
 
   document.getElementById('readerFullscreen')?.addEventListener('click', toggleFullscreen);
   document.getElementById('readerFullscreenFooter')?.addEventListener('click', toggleFullscreen);
@@ -513,38 +504,23 @@ async function renderReader({ chapterId }) {
 function renderReaderPages() {
   const content = document.getElementById('readerContent');
   if (!content || !RS.pages.length) return;
+  _animating = false;
 
-  if (RS.mode === 'vertical') {
-    content.innerHTML = `
-      <div class="reader-pages-vertical" id="pagesVertical">
-        ${RS.pages.map((p, i) => `
-          <img src="${p}" alt="Pagina ${i+1}" loading="${i < 3 ? 'eager' : 'lazy'}"
-            data-index="${i}" onerror="this.style.opacity='.2'" />
-        `).join('')}
-      </div>
-    `;
-    initVerticalObserver();
-    initReaderScroll();
-    initVerticalTap();
-  } else {
-    content.innerHTML = `
-      <div class="reader-pages-horizontal" id="pagesHorizontal">
-        <button class="reader-nav-btn prev" id="prevPage">&#8249;</button>
-        <div class="page-slot" id="pageSlot">
-          <img class="page-img" id="currentPageImg"
-            src="${RS.pages[RS.current]}"
-            alt="Pagina ${RS.current + 1}"
-            onerror="this.style.opacity='.2'" />
-        </div>
-        <button class="reader-nav-btn next" id="nextPage">&#8250;</button>
-      </div>
-    `;
-    document.getElementById('prevPage')?.addEventListener('click', () => goToPage(RS.current - 1, 'prev'));
-    document.getElementById('nextPage')?.addEventListener('click', () => goToPage(RS.current + 1, 'next'));
-    initTouchSwipe();
-    initKeyboard();
-  }
+  content.innerHTML = `
+    <div class="reader-pages-vertical" id="pagesVertical">
+      ${RS.pages.map((p, i) => `
+        <img src="${p}" alt="Pagina ${i+1}"
+          loading="${i < 4 ? 'eager' : 'lazy'}"
+          data-index="${i}"
+          onerror="this.style.opacity='.2'" />
+      `).join('')}
+    </div>
+  `;
+  initVerticalObserver();
+  initReaderScroll();
+  initVerticalTap();
 }
+
 
 function animatePage(newIndex, direction, skipAnim) {
   if (_animating) return;

@@ -70,6 +70,10 @@
     </nav>
 
     <div class="topbar-actions">
+      <button class="install-btn" id="installBtn" style="display:none" aria-label="Instalar app">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Instalar</span>
+      </button>
       <button class="icon-btn" id="themeToggle" aria-label="Alternar tema">
         <svg id="themeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -153,7 +157,50 @@
     }, 2200);
   });
 </script>
-  <script src="assets/js/store.js"></script>
+  
+<script>
+// PWA Install prompt
+let _deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) { btn.style.display = 'flex'; }
+});
+
+window.addEventListener('appinstalled', () => {
+  _deferredPrompt = null;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'none';
+});
+
+function triggerInstall() {
+  if (_deferredPrompt) {
+    _deferredPrompt.prompt();
+    _deferredPrompt.userChoice.then(result => {
+      _deferredPrompt = null;
+      const btn = document.getElementById('installBtn');
+      if (result.outcome === 'accepted' && btn) btn.style.display = 'none';
+    });
+  } else {
+    // iOS / outros
+    const msg = navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')
+      ? 'Para instalar no iOS:\n1. Toque no icone de Compartilhar\n2. Selecione "Adicionar a Tela de Inicio"'
+      : 'Para instalar:\nNo Chrome: toque nos 3 pontos > "Adicionar a tela inicial"';
+    alert(msg);
+  }
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('installBtn')?.addEventListener('click', triggerInstall);
+});
+</script>
+<script src="assets/js/store.js"></script>
 <script src="assets/js/api.js"></script>
 <script src="assets/js/ui.js"></script>
 <script src="assets/js/router.js"></script>
