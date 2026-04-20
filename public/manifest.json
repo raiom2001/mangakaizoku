@@ -1,7 +1,7 @@
 {
   "name": "MangaKaizoku",
   "short_name": "Kaizoku",
-  "description": "Leia seus mangás favoritos",
+  "description": "Leia seus mangás favoritos — 海賊漫画",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#07070d",
