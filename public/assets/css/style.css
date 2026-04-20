@@ -608,8 +608,8 @@ body.reader-mode{padding-top:0;overflow:hidden}
   display:flex;align-items:center;gap:5px;letter-spacing:.3px;
 }
 .reader-btn:hover{background:rgba(201,168,76,.15);border-color:var(--gold);color:var(--gold)}
-.reader-pages-vertical{flex:1;overflow-y:auto;overflow-x:hidden;padding-top:56px;padding-bottom:72px}
-.reader-pages-vertical img{display:block;width:100%;max-width:860px;margin:0 auto;height:auto}
+
+
 
 
 
@@ -960,3 +960,25 @@ body.reader-mode{padding-top:0;overflow:hidden}
 
 /* Remove botões nav antigos se existirem */
 .reader-nav-btn { display: none !important; }
+
+/* ── READER VERTICAL — uma página por vez ── */
+.reader-pages-vertical {
+  flex: 1;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  background: #000;
+  height: 100%;
+}
+.reader-pages-vertical img {
+  display: block;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  height: calc(100vh - 56px - 68px);
+  object-fit: contain;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  background: #000;
+}
