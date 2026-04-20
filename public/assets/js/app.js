@@ -419,47 +419,48 @@ const FS_EXIT  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" st
 const VERT_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`;
 const HORZ_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
 const BACK_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
+const FS_ENTER = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
+const FS_EXIT  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>`;
+
+(function(){
+  function setVH(){ document.documentElement.style.setProperty('--vh',(window.innerHeight*0.01)+'px'); }
+  setVH();
+  window.addEventListener('resize', setVH, {passive:true});
+})();
+
+let RS = { pages:[], current:0, title:'', chapterId:null, mangaId:null };
 
 async function renderReader({ chapterId }) {
-  const app = document.getElementById('app');
-  UI.updateNavActive('');
-  document.body.classList.add('reader-mode');
-
-  const hash    = location.hash;
-  const qs      = hash.includes('?') ? hash.split('?')[1] : '';
-  const urlP    = new URLSearchParams(qs);
+  const app    = document.getElementById('app');
+  const hash   = location.hash;
+  const qs     = hash.includes('?') ? hash.split('?')[1] : '';
+  const urlP   = new URLSearchParams(qs);
   const mangaId = urlP.get('manga') || '';
   const mTitle  = urlP.get('title') ? decodeURIComponent(urlP.get('title')) : 'Lendo';
 
-  RS.mode      = Store.getReaderMode();
   RS.chapterId = chapterId;
   RS.mangaId   = mangaId;
   RS.title     = mTitle;
   RS.current   = 0;
   RS.pages     = [];
-  _animating   = false;
+
+  UI.updateNavActive('');
+  document.body.classList.add('reader-mode');
 
   app.innerHTML = `
     <div class="reader-wrapper" id="readerWrapper">
       <div class="reader-header" id="readerHeader">
-        <button class="reader-back-btn" id="readerBack">${BACK_SVG}</button>
+        <button class="reader-back-btn" id="readerBack" aria-label="Voltar">${BACK_SVG}</button>
         <div class="reader-title">${mTitle}</div>
         <div class="reader-actions">
-
-          <button class="reader-fullscreen-btn" id="readerFullscreen">${FS_ENTER}</button>
+          <button class="reader-fullscreen-btn" id="readerFullscreen" title="Tela cheia">${FS_ENTER}</button>
         </div>
       </div>
-
-      <div id="readerContent" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-        <div class="page-loading" style="padding-top:56px;">
-          <div class="spinner" style="border-color:rgba(201,168,76,.2);border-top-color:#c9a84c;"></div>
-        </div>
-      </div>
-
+      <div id="readerContent"></div>
       <div class="reader-footer" id="readerFooter">
         <span class="reader-page-count" id="pageCount">0 / 0</span>
         <input type="range" class="reader-progress" id="readerProgress" min="1" value="1" step="1"/>
-        <button class="reader-fullscreen-btn" id="readerFullscreenFooter">${FS_ENTER}</button>
+        <button class="reader-fullscreen-btn" id="readerFullscreenFooter" title="Tela cheia">${FS_ENTER}</button>
       </div>
     </div>
   `;
@@ -470,110 +471,97 @@ async function renderReader({ chapterId }) {
     else history.back();
   });
 
-
-
-  document.getElementById('readerFullscreen')?.addEventListener('click', toggleFullscreen);
-  document.getElementById('readerFullscreenFooter')?.addEventListener('click', toggleFullscreen);
-  document.addEventListener('fullscreenchange', onFullscreenChange);
-  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
-
   document.getElementById('readerProgress')?.addEventListener('input', e => {
     const idx = parseInt(e.target.value) - 1;
-    if (RS.mode === 'horizontal') animatePage(idx, idx > RS.current ? 'next' : 'prev', true);
-    else scrollToPage(idx);
+    vertJumpTo(idx);
   });
 
+  const fsHandler = () => toggleFullscreen();
+  document.getElementById('readerFullscreen')?.addEventListener('click', fsHandler);
+  document.getElementById('readerFullscreenFooter')?.addEventListener('click', fsHandler);
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
+
+  const cnt = document.getElementById('readerContent');
+  cnt.innerHTML = '<div class="page-loading"><div class="spinner"></div></div>';
+
   try {
-    const pages = await API.getChapterPages(chapterId);
-    RS.pages   = pages;
+    RS.pages = await API.getChapterPages(chapterId);
     RS.current = 0;
     const prog = document.getElementById('readerProgress');
-    if (prog) { prog.max = pages.length; prog.value = 1; }
+    if (prog) { prog.max = RS.pages.length; prog.value = 1; }
     updatePageCount();
-    renderReaderPages();
-  } catch (err) {
-    document.getElementById('readerContent').innerHTML = `
+    buildVertical(cnt);
+    Store.addHistory({ mangaId, mangaTitle: mTitle, chapterId,
+      chapterNum: '', chapterTitle: '', coverId: null, timestamp: Date.now() });
+  } catch(e) {
+    cnt.innerHTML = `
       <div style="color:#c9a84c;text-align:center;padding:80px 24px;font-family:'Cinzel',serif;">
-        <div style="font-size:18px;margin-bottom:16px;">Falha ao carregar o capitulo</div>
+        <div style="font-size:18px;margin-bottom:16px;">Falha ao carregar o capítulo</div>
         <button class="btn btn-primary" onclick="location.reload()">Tentar novamente</button>
-      </div>
-    `;
+      </div>`;
   }
 }
 
-function renderReaderPages() {
-  const content = document.getElementById('readerContent');
-  if (!content || !RS.pages.length) return;
-  _animating = false;
+function buildVertical(cnt) {
+  cnt.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.id = 'pagesWrap';
+  wrap.className = 'reader-pages-vertical';
 
-  content.innerHTML = `
-    <div class="reader-pages-vertical" id="pagesVertical">
-      ${RS.pages.map((p, i) => `
-        <img src="${p}" alt="Pagina ${i+1}"
-          loading="${i < 4 ? 'eager' : 'lazy'}"
-          data-index="${i}"
-          onerror="this.style.opacity='.2'" />
-      `).join('')}
-    </div>
-  `;
-  initVerticalObserver();
-  initReaderScroll();
-  initVerticalTap();
-}
+  RS.pages.forEach((url, i) => {
+    const img = document.createElement('img');
+    img.alt = 'Pagina ' + (i + 1);
+    img.dataset.index = i;
+    img.loading = i < 3 ? 'eager' : 'lazy';
+    img.src = url;
+    img.onerror = () => { img.style.opacity = '0.15'; };
+    wrap.appendChild(img);
+  });
 
+  cnt.appendChild(wrap);
 
-function animatePage(newIndex, direction, skipAnim) {
-  if (_animating) return;
-  if (newIndex < 0 || newIndex >= RS.pages.length) return;
-  if (newIndex === RS.current && !skipAnim) return;
-
-  const slot = document.getElementById('pageSlot');
-  if (!slot) { RS.current = newIndex; updatePageCount(); return; }
-
-  if (skipAnim) {
-    const img = document.getElementById('currentPageImg');
-    if (img) { img.src = RS.pages[newIndex]; img.alt = 'Pagina ' + (newIndex+1); }
-    RS.current = newIndex;
+  let lastScroll = 0;
+  wrap.addEventListener('scroll', () => {
+    // Detecta página mais visível
+    const wrapTop = wrap.getBoundingClientRect().top;
+    const imgs = wrap.querySelectorAll('img');
+    let closest = 0, minDist = Infinity;
+    imgs.forEach((img, i) => {
+      const dist = Math.abs(img.getBoundingClientRect().top - wrapTop);
+      if (dist < minDist) { minDist = dist; closest = i; }
+    });
+    RS.current = closest;
     updatePageCount();
-    return;
-  }
+    // Esconde controles ao rolar para baixo
+    const going = wrap.scrollTop > lastScroll + 10;
+    if (Math.abs(wrap.scrollTop - lastScroll) > 15) {
+      document.getElementById('readerHeader')?.classList.toggle('hidden', going);
+      document.getElementById('readerFooter')?.classList.toggle('hidden', going);
+      lastScroll = wrap.scrollTop;
+    }
+  }, { passive: true });
 
-  _animating = true;
-  const oldImg = document.getElementById('currentPageImg');
-  const leaveClass = direction === 'next' ? 'leave-next' : 'leave-prev';
-  const enterClass = direction === 'next' ? 'enter-next' : 'enter-prev';
+  // Tap no centro mostra/esconde controles
+  wrap.addEventListener('click', e => {
+    const cx = e.clientX / window.innerWidth;
+    if (cx > 0.25 && cx < 0.75) {
+      document.getElementById('readerHeader')?.classList.toggle('hidden');
+      document.getElementById('readerFooter')?.classList.toggle('hidden');
+    }
+  });
 
-  const newImg = document.createElement('img');
-  newImg.className = 'page-img ' + enterClass;
-  newImg.src = RS.pages[newIndex];
-  newImg.alt = 'Pagina ' + (newIndex + 1);
-  newImg.onerror = () => { newImg.style.opacity = '0.2'; };
-
-  if (oldImg) oldImg.classList.add(leaveClass);
-  slot.appendChild(newImg);
-  RS.current = newIndex;
-  updatePageCount();
-
-  setTimeout(() => {
-    if (oldImg && oldImg.parentNode) oldImg.remove();
-    newImg.className = 'page-img';
-    _animating = false;
-  }, 250);
+  initKeyboard();
 }
 
-function goToPage(index, direction) {
-  const clamped = Math.max(0, Math.min(index, RS.pages.length - 1));
-  const dir = direction || (index > RS.current ? 'next' : 'prev');
-  animatePage(clamped, dir);
-}
-
-function scrollToPage(index) {
-  const container = document.getElementById('pagesVertical');
-  if (!container) return;
-  const imgs = container.querySelectorAll('img');
-  if (imgs[index]) imgs[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+function vertJumpTo(index) {
+  if (index < 0 || index >= RS.pages.length) return;
   RS.current = index;
   updatePageCount();
+  const wrap = document.getElementById('pagesWrap');
+  if (!wrap) return;
+  const imgs = wrap.querySelectorAll('img');
+  if (imgs[index]) imgs[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function updatePageCount() {
@@ -583,97 +571,19 @@ function updatePageCount() {
   if (prog) prog.value = RS.current + 1;
 }
 
-function initVerticalObserver() {
-  const container = document.getElementById('pagesVertical');
-  if (!container) return;
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        const idx = parseInt(e.target.dataset.index);
-        if (!isNaN(idx)) { RS.current = idx; updatePageCount(); }
-      }
-    });
-  }, { threshold: 0.3 });
-  container.querySelectorAll('img').forEach(img => obs.observe(img));
-}
-
-function initReaderScroll() {
-  const container = document.getElementById('pagesVertical');
-  if (!container) return;
-  let lastY = 0;
-  container.addEventListener('scroll', () => {
-    const y = container.scrollTop;
-    const down = y > lastY && y > 80;
-    document.getElementById('readerHeader')?.classList.toggle('hidden', down);
-    document.getElementById('readerFooter')?.classList.toggle('hidden', down);
-    lastY = y;
-  }, { passive: true });
-}
-
-// Tap nas bordas para avançar/voltar no modo vertical
-function initVerticalTap() {
-  const container = document.getElementById('pagesVertical');
-  if (!container) return;
-  container.addEventListener('click', e => {
-    const x = e.clientX;
-    const w = window.innerWidth;
-    if (x < w * 0.25) scrollToPage(Math.max(0, RS.current - 1));
-    else if (x > w * 0.75) scrollToPage(Math.min(RS.pages.length - 1, RS.current + 1));
-    else {
-      // Tap no centro mostra/esconde header e footer
-      const h = document.getElementById('readerHeader');
-      const f = document.getElementById('readerFooter');
-      h?.classList.toggle('hidden');
-      f?.classList.toggle('hidden');
-    }
-  });
-}
-
-function initTouchSwipe() {
-  const wrap = document.getElementById('pagesHorizontal');
-  if (!wrap) return;
-  let startX = 0, startY = 0, moved = false;
-
-  wrap.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    moved  = false;
-  }, { passive: true });
-
-  wrap.addEventListener('touchmove', e => {
-    moved = true;
-  }, { passive: true });
-
-  wrap.addEventListener('touchend', e => {
-    if (!moved) return;
-    const dx = startX - e.changedTouches[0].clientX;
-    const dy = Math.abs(startY - e.changedTouches[0].clientY);
-    if (Math.abs(dx) > 40 && Math.abs(dx) > dy) {
-      goToPage(dx > 0 ? RS.current + 1 : RS.current - 1, dx > 0 ? 'next' : 'prev');
-    }
-  }, { passive: true });
-
-  // Tap nas bordas
-  wrap.addEventListener('click', e => {
-    const x = e.clientX;
-    const w = window.innerWidth;
-    if (x < w * 0.25) goToPage(RS.current - 1, 'prev');
-    else if (x > w * 0.75) goToPage(RS.current + 1, 'next');
-  });
-}
-
 function initKeyboard() {
-  const handler = e => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goToPage(RS.current + 1, 'next');
-    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    goToPage(RS.current - 1, 'prev');
+  if (document._readerKey) document.removeEventListener('keydown', document._readerKey);
+  const h = e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') vertJumpTo(RS.current + 1);
+    if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  vertJumpTo(RS.current - 1);
     if (e.key === 'f' || e.key === 'F') toggleFullscreen();
     if (e.key === 'Escape' && !document.fullscreenElement) {
       exitReader();
       if (RS.mangaId) Router.navigate('#/manga/' + RS.mangaId);
     }
   };
-  document.addEventListener('keydown', handler);
-  document._readerKeyHandler = handler;
+  document.addEventListener('keydown', h);
+  document._readerKey = h;
 }
 
 function toggleFullscreen() {
@@ -682,14 +592,14 @@ function toggleFullscreen() {
   const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
   if (!isFs) {
     const req = wrapper.requestFullscreen || wrapper.webkitRequestFullscreen;
-    if (req) req.call(wrapper).catch(() => {});
+    if (req) req.call(wrapper, { navigationUI: 'hide' }).catch(() => {});
   } else {
     const exit = document.exitFullscreen || document.webkitExitFullscreen;
     if (exit) exit.call(document).catch(() => {});
   }
 }
 
-function onFullscreenChange() {
+function onFsChange() {
   const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
   const icon = isFs ? FS_EXIT : FS_ENTER;
   const b1 = document.getElementById('readerFullscreen');
@@ -700,17 +610,11 @@ function onFullscreenChange() {
 
 function exitReader() {
   document.body.classList.remove('reader-mode');
-  _animating = false;
   const exit = document.exitFullscreen || document.webkitExitFullscreen;
-  if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) {
-    exit.call(document).catch(() => {});
-  }
-  document.removeEventListener('fullscreenchange', onFullscreenChange);
-  document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
-  if (document._readerKeyHandler) {
-    document.removeEventListener('keydown', document._readerKeyHandler);
-    delete document._readerKeyHandler;
-  }
+  if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) exit.call(document).catch(() => {});
+  document.removeEventListener('fullscreenchange', onFsChange);
+  document.removeEventListener('webkitfullscreenchange', onFsChange);
+  if (document._readerKey) { document.removeEventListener('keydown', document._readerKey); delete document._readerKey; }
 }
 
 // ── Init ───────────────────────────────────────────────
