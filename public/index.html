@@ -8,6 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link rel="stylesheet" href="assets/css/style.css"/>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#07070d"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Kaizoku"/>
   <script>
     (function(){
       var l=document.createElement('link');
@@ -146,5 +151,6 @@
 <script src="assets/js/ui.js"></script>
 <script src="assets/js/router.js"></script>
 <script src="assets/js/app.js"></script>
+<script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
 </body>
 </html>
