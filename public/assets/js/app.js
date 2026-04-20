@@ -521,13 +521,13 @@ function renderReaderPages() {
   const cnt = document.getElementById('readerContent');
   if (!cnt || !RS.pages.length) return;
 
-  cnt.innerHTML = `
-    <div class="mk-reader" id="mkReader">
-      <div class="mk-pages ${RS.mode === 'vertical' ? 'mk-vertical' : 'mk-horizontal'}" id="mkPages"></div>
-      <div class="mk-tap mk-tap-prev" id="mkTapPrev" style="${RS.mode === 'horizontal' ? 'display:block' : 'display:none'}"></div>
-      <div class="mk-tap mk-tap-next" id="mkTapNext" style="${RS.mode === 'horizontal' ? 'display:block' : 'display:none'}"></div>
-    </div>
-  `;
+  const modeClass = RS.mode === 'vertical' ? 'mk-vertical' : 'mk-horizontal';
+  const tapDisplay = RS.mode === 'horizontal' ? 'display:block' : 'display:none';
+  cnt.innerHTML = '<div class="mk-reader" id="mkReader">'
+    + '<div class="mk-pages ' + modeClass + '" id="mkPages"></div>'
+    + '<div class="mk-tap mk-tap-prev" id="mkTapPrev" style="' + tapDisplay + '"></div>'
+    + '<div class="mk-tap mk-tap-next" id="mkTapNext" style="' + tapDisplay + '"></div>'
+    + '</div>';
 
   const container = document.getElementById('mkPages');
 
