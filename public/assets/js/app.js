@@ -410,13 +410,14 @@ function renderHistory() {
   });
 }
 
-// ── Reader ─────────────────────────────────────────────
-let RS = { pages: [], current: 0, mode: 'vertical', title: '', chapterId: null, mangaId: null, touchStartX: 0 };
+// ── Reader ─────────────────────────────────────────
+let RS = { pages: [], current: 0, mode: 'vertical', title: '', chapterId: null, mangaId: null };
+let _animating = false;
 
 const FS_ENTER = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
 const FS_EXIT  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>`;
-const VERT_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`;
-const HORZ_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+const VERT_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`;
+const HORZ_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
 const BACK_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
 
 async function renderReader({ chapterId }) {
@@ -424,49 +425,50 @@ async function renderReader({ chapterId }) {
   UI.updateNavActive('');
   document.body.classList.add('reader-mode');
 
-  const hash     = location.hash;
-  const qs       = hash.includes('?') ? hash.split('?')[1] : '';
-  const urlP     = new URLSearchParams(qs);
-  const mangaId  = urlP.get('manga') || '';
-  const mTitle   = urlP.get('title') ? decodeURIComponent(urlP.get('title')) : 'Lendo';
+  const hash    = location.hash;
+  const qs      = hash.includes('?') ? hash.split('?')[1] : '';
+  const urlP    = new URLSearchParams(qs);
+  const mangaId = urlP.get('manga') || '';
+  const mTitle  = urlP.get('title') ? decodeURIComponent(urlP.get('title')) : 'Lendo';
 
-  RS.mode       = Store.getReaderMode();
-  RS.chapterId  = chapterId;
-  RS.mangaId    = mangaId;
-  RS.title      = mTitle;
-  RS.current    = 0;
-  RS.pages      = [];
+  RS.mode      = Store.getReaderMode();
+  RS.chapterId = chapterId;
+  RS.mangaId   = mangaId;
+  RS.title     = mTitle;
+  RS.current   = 0;
+  RS.pages     = [];
+  _animating   = false;
 
   app.innerHTML = `
     <div class="reader-wrapper" id="readerWrapper">
       <div class="reader-header" id="readerHeader">
-        <button class="reader-back-btn" id="readerBack" aria-label="Voltar">${BACK_SVG}</button>
+        <button class="reader-back-btn" id="readerBack">${BACK_SVG}</button>
         <div class="reader-title">${mTitle}</div>
         <div class="reader-actions">
           <button class="reader-btn" id="readerModeBtn">
             ${RS.mode === 'vertical' ? VERT_SVG + ' Vertical' : HORZ_SVG + ' Horizontal'}
           </button>
-          <button class="reader-fullscreen-btn" id="readerFullscreen" title="Tela cheia">${FS_ENTER}</button>
+          <button class="reader-fullscreen-btn" id="readerFullscreen">${FS_ENTER}</button>
         </div>
       </div>
 
       <div id="readerContent" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
         <div class="page-loading" style="padding-top:56px;">
-          <div class="spinner" style="border-color:rgba(201,168,76,0.2);border-top-color:#c9a84c;"></div>
+          <div class="spinner" style="border-color:rgba(201,168,76,.2);border-top-color:#c9a84c;"></div>
         </div>
       </div>
 
       <div class="reader-footer" id="readerFooter">
         <span class="reader-page-count" id="pageCount">0 / 0</span>
-        <input type="range" class="reader-progress" id="readerProgress" min="1" value="1" step="1" />
-        <button class="reader-fullscreen-btn" id="readerFullscreenFooter" title="Tela cheia">${FS_ENTER}</button>
+        <input type="range" class="reader-progress" id="readerProgress" min="1" value="1" step="1"/>
+        <button class="reader-fullscreen-btn" id="readerFullscreenFooter">${FS_ENTER}</button>
       </div>
     </div>
   `;
 
   document.getElementById('readerBack')?.addEventListener('click', () => {
     exitReader();
-    if (mangaId) Router.navigate(`#/manga/${mangaId}`);
+    if (mangaId) Router.navigate('#/manga/' + mangaId);
     else history.back();
   });
 
@@ -475,13 +477,12 @@ async function renderReader({ chapterId }) {
     Store.setReaderMode(RS.mode);
     const btn = document.getElementById('readerModeBtn');
     if (btn) btn.innerHTML = RS.mode === 'vertical' ? VERT_SVG + ' Vertical' : HORZ_SVG + ' Horizontal';
+    _animating = false;
     renderReaderPages();
   });
 
-  // Fullscreen — dois botões (header + footer)
-  const fsHandler = () => toggleFullscreen();
-  document.getElementById('readerFullscreen')?.addEventListener('click', fsHandler);
-  document.getElementById('readerFullscreenFooter')?.addEventListener('click', fsHandler);
+  document.getElementById('readerFullscreen')?.addEventListener('click', toggleFullscreen);
+  document.getElementById('readerFullscreenFooter')?.addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
@@ -495,12 +496,11 @@ async function renderReader({ chapterId }) {
     const pages = await API.getChapterPages(chapterId);
     RS.pages   = pages;
     RS.current = 0;
-
     const prog = document.getElementById('readerProgress');
     if (prog) { prog.max = pages.length; prog.value = 1; }
     updatePageCount();
     renderReaderPages();
-  } catch {
+  } catch (err) {
     document.getElementById('readerContent').innerHTML = `
       <div style="color:#c9a84c;text-align:center;padding:80px 24px;font-family:'Cinzel',serif;">
         <div style="font-size:18px;margin-bottom:16px;">Falha ao carregar o capitulo</div>
@@ -518,85 +518,77 @@ function renderReaderPages() {
     content.innerHTML = `
       <div class="reader-pages-vertical" id="pagesVertical">
         ${RS.pages.map((p, i) => `
-          <img src="${p}" alt="Pagina ${i + 1}" loading="lazy"
-            width="860" height="1230" data-index="${i}"
-            onerror="this.style.opacity='0.2'" />
+          <img src="${p}" alt="Pagina ${i+1}" loading="${i < 3 ? 'eager' : 'lazy'}"
+            data-index="${i}" onerror="this.style.opacity='.2'" />
         `).join('')}
       </div>
     `;
     initVerticalObserver();
     initReaderScroll();
+    initVerticalTap();
   } else {
     content.innerHTML = `
       <div class="reader-pages-horizontal" id="pagesHorizontal">
+        <button class="reader-nav-btn prev" id="prevPage">&#8249;</button>
         <div class="page-slot" id="pageSlot">
           <img class="page-img" id="currentPageImg"
-            src="${RS.pages[RS.current]}" alt="Pagina ${RS.current + 1}"
-            width="860" height="1230" onerror="this.style.opacity='0.2'" />
+            src="${RS.pages[RS.current]}"
+            alt="Pagina ${RS.current + 1}"
+            onerror="this.style.opacity='.2'" />
         </div>
-        <div class="tap-zone tap-prev" id="tapPrev"></div>
-        <div class="tap-zone tap-next" id="tapNext"></div>
+        <button class="reader-nav-btn next" id="nextPage">&#8250;</button>
       </div>
     `;
-    document.getElementById('tapPrev')?.addEventListener('click', () => goToPage(RS.current - 1, 'prev'));
-    document.getElementById('tapNext')?.addEventListener('click', () => goToPage(RS.current + 1, 'next'));
+    document.getElementById('prevPage')?.addEventListener('click', () => goToPage(RS.current - 1, 'prev'));
+    document.getElementById('nextPage')?.addEventListener('click', () => goToPage(RS.current + 1, 'next'));
     initTouchSwipe();
     initKeyboard();
   }
 }
 
-// Animação de virada de página
-let _animating = false;
-
-function animatePage(newIndex, direction, skipAnim = false) {
+function animatePage(newIndex, direction, skipAnim) {
   if (_animating) return;
   if (newIndex < 0 || newIndex >= RS.pages.length) return;
-  if (newIndex === RS.current) return;
+  if (newIndex === RS.current && !skipAnim) return;
 
   const slot = document.getElementById('pageSlot');
   if (!slot) { RS.current = newIndex; updatePageCount(); return; }
 
   if (skipAnim) {
     const img = document.getElementById('currentPageImg');
-    if (img) { img.src = RS.pages[newIndex]; img.alt = `Pagina ${newIndex + 1}`; }
+    if (img) { img.src = RS.pages[newIndex]; img.alt = 'Pagina ' + (newIndex+1); }
     RS.current = newIndex;
     updatePageCount();
     return;
   }
 
   _animating = true;
-
   const oldImg = document.getElementById('currentPageImg');
   const leaveClass = direction === 'next' ? 'leave-next' : 'leave-prev';
   const enterClass = direction === 'next' ? 'enter-next' : 'enter-prev';
 
-  // Cria nova imagem
   const newImg = document.createElement('img');
-  newImg.className = `page-img ${enterClass}`;
+  newImg.className = 'page-img ' + enterClass;
   newImg.src = RS.pages[newIndex];
-  newImg.alt = `Pagina ${newIndex + 1}`;
-  newImg.width = 860;
-  newImg.height = 1230;
+  newImg.alt = 'Pagina ' + (newIndex + 1);
   newImg.onerror = () => { newImg.style.opacity = '0.2'; };
 
-  // Anima saída da atual
   if (oldImg) oldImg.classList.add(leaveClass);
-
   slot.appendChild(newImg);
   RS.current = newIndex;
   updatePageCount();
 
-  const duration = 230;
   setTimeout(() => {
-    oldImg?.remove();
+    if (oldImg && oldImg.parentNode) oldImg.remove();
     newImg.className = 'page-img';
     _animating = false;
-  }, duration);
+  }, 250);
 }
 
 function goToPage(index, direction) {
+  const clamped = Math.max(0, Math.min(index, RS.pages.length - 1));
   const dir = direction || (index > RS.current ? 'next' : 'prev');
-  animatePage(Math.max(0, Math.min(index, RS.pages.length - 1)), dir);
+  animatePage(clamped, dir);
 }
 
 function scrollToPage(index) {
@@ -611,23 +603,22 @@ function scrollToPage(index) {
 function updatePageCount() {
   const el   = document.getElementById('pageCount');
   const prog = document.getElementById('readerProgress');
-  if (el)   el.textContent = `${RS.current + 1} / ${RS.pages.length}`;
+  if (el)   el.textContent = (RS.current + 1) + ' / ' + RS.pages.length;
   if (prog) prog.value = RS.current + 1;
 }
 
 function initVerticalObserver() {
   const container = document.getElementById('pagesVertical');
   if (!container) return;
-  const imgs = container.querySelectorAll('img');
-  const obs  = new IntersectionObserver(entries => {
+  const obs = new IntersectionObserver(entries => {
     entries.forEach(e => {
       if (e.isIntersecting) {
         const idx = parseInt(e.target.dataset.index);
         if (!isNaN(idx)) { RS.current = idx; updatePageCount(); }
       }
     });
-  }, { threshold: 0.4, rootMargin: '-25% 0px -25% 0px' });
-  imgs.forEach(img => obs.observe(img));
+  }, { threshold: 0.3 });
+  container.querySelectorAll('img').forEach(img => obs.observe(img));
 }
 
 function initReaderScroll() {
@@ -635,52 +626,84 @@ function initReaderScroll() {
   if (!container) return;
   let lastY = 0;
   container.addEventListener('scroll', () => {
-    const y    = container.scrollTop;
-    const going = y > lastY && y > 60;
-    document.getElementById('readerHeader')?.classList.toggle('hidden', going);
-    document.getElementById('readerFooter')?.classList.toggle('hidden', going);
+    const y = container.scrollTop;
+    const down = y > lastY && y > 80;
+    document.getElementById('readerHeader')?.classList.toggle('hidden', down);
+    document.getElementById('readerFooter')?.classList.toggle('hidden', down);
     lastY = y;
   }, { passive: true });
+}
+
+// Tap nas bordas para avançar/voltar no modo vertical
+function initVerticalTap() {
+  const container = document.getElementById('pagesVertical');
+  if (!container) return;
+  container.addEventListener('click', e => {
+    const x = e.clientX;
+    const w = window.innerWidth;
+    if (x < w * 0.25) scrollToPage(Math.max(0, RS.current - 1));
+    else if (x > w * 0.75) scrollToPage(Math.min(RS.pages.length - 1, RS.current + 1));
+    else {
+      // Tap no centro mostra/esconde header e footer
+      const h = document.getElementById('readerHeader');
+      const f = document.getElementById('readerFooter');
+      h?.classList.toggle('hidden');
+      f?.classList.toggle('hidden');
+    }
+  });
 }
 
 function initTouchSwipe() {
   const wrap = document.getElementById('pagesHorizontal');
   if (!wrap) return;
-  let startX = 0, startY = 0;
+  let startX = 0, startY = 0, moved = false;
+
   wrap.addEventListener('touchstart', e => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
+    moved  = false;
   }, { passive: true });
+
+  wrap.addEventListener('touchmove', e => {
+    moved = true;
+  }, { passive: true });
+
   wrap.addEventListener('touchend', e => {
+    if (!moved) return;
     const dx = startX - e.changedTouches[0].clientX;
     const dy = Math.abs(startY - e.changedTouches[0].clientY);
-    if (Math.abs(dx) > 30 && Math.abs(dx) > dy) {
+    if (Math.abs(dx) > 40 && Math.abs(dx) > dy) {
       goToPage(dx > 0 ? RS.current + 1 : RS.current - 1, dx > 0 ? 'next' : 'prev');
     }
   }, { passive: true });
+
+  // Tap nas bordas
+  wrap.addEventListener('click', e => {
+    const x = e.clientX;
+    const w = window.innerWidth;
+    if (x < w * 0.25) goToPage(RS.current - 1, 'prev');
+    else if (x > w * 0.75) goToPage(RS.current + 1, 'next');
+  });
 }
 
 function initKeyboard() {
   const handler = e => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goToPage(RS.current + 1, 'next');
-    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goToPage(RS.current - 1, 'prev');
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  goToPage(RS.current + 1, 'next');
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    goToPage(RS.current - 1, 'prev');
     if (e.key === 'f' || e.key === 'F') toggleFullscreen();
     if (e.key === 'Escape' && !document.fullscreenElement) {
       exitReader();
-      if (RS.mangaId) Router.navigate(`#/manga/${RS.mangaId}`);
+      if (RS.mangaId) Router.navigate('#/manga/' + RS.mangaId);
     }
   };
   document.addEventListener('keydown', handler);
   document._readerKeyHandler = handler;
 }
 
-// Fullscreen robusto com prefixos webkit
 function toggleFullscreen() {
   const wrapper = document.getElementById('readerWrapper');
   if (!wrapper) return;
-
   const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-
   if (!isFs) {
     const req = wrapper.requestFullscreen || wrapper.webkitRequestFullscreen;
     if (req) req.call(wrapper).catch(() => {});
@@ -693,23 +716,25 @@ function toggleFullscreen() {
 function onFullscreenChange() {
   const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
   const icon = isFs ? FS_EXIT : FS_ENTER;
-  const b1   = document.getElementById('readerFullscreen');
-  const b2   = document.getElementById('readerFullscreenFooter');
+  const b1 = document.getElementById('readerFullscreen');
+  const b2 = document.getElementById('readerFullscreenFooter');
   if (b1) b1.innerHTML = icon;
   if (b2) b2.innerHTML = icon;
 }
 
 function exitReader() {
   document.body.classList.remove('reader-mode');
+  _animating = false;
   const exit = document.exitFullscreen || document.webkitExitFullscreen;
-  if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) exit.call(document).catch(() => {});
+  if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) {
+    exit.call(document).catch(() => {});
+  }
   document.removeEventListener('fullscreenchange', onFullscreenChange);
   document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
   if (document._readerKeyHandler) {
     document.removeEventListener('keydown', document._readerKeyHandler);
     delete document._readerKeyHandler;
   }
-  _animating = false;
 }
 
 // ── Init ───────────────────────────────────────────────
