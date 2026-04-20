@@ -524,16 +524,39 @@ function renderReaderPages() {
 
   if (RS.mode === 'vertical') {
     content.innerHTML = `
-      <div class="reader-pages-vertical" id="pagesVertical">
-        ${RS.pages.map((p, i) => `
-          <img src="${p}" alt="Pagina ${i + 1}" loading="lazy"
-            width="860" height="1230" data-index="${i}"
-            onerror="this.style.opacity='0.2'" />
-        `).join('')}
+      <div class="swiper reader-swiper" id="readerSwiperV">
+        <div class="swiper-wrapper">
+          ${RS.pages.map((p, i) => `
+            <div class="swiper-slide reader-slide">
+              <img src="${i === 0 ? p : ''}" data-src="${p}"
+                alt="Pagina ${i + 1}"
+                class="swiper-lazy"
+                onerror="this.style.opacity='0.2'" />
+              <div class="swiper-lazy-preloader"></div>
+            </div>
+          `).join('')}
+        </div>
       </div>
     `;
-    initVerticalObserver();
-    initReaderScroll();
+
+    RS.swiper = new Swiper('#readerSwiperV', {
+      direction: 'vertical',
+      slidesPerView: 1,
+      spaceBetween: 0,
+      lazy: { loadPrevNext: true, loadPrevNextAmount: 1 },
+      keyboard: { enabled: true },
+      preloadImages: false,
+      mousewheel: true,
+      initialSlide: RS.current,
+      on: {
+        slideChange(sw) {
+          RS.current = sw.activeIndex;
+          updatePageCount();
+        }
+      }
+    });
+
+    initKeyboard();
   } else {
     content.innerHTML = `
       <div class="swiper reader-swiper" id="readerSwiper">
@@ -634,51 +657,6 @@ function updatePageCount() {
   const prog = document.getElementById('readerProgress');
   if (el)   el.textContent = `${RS.current + 1} / ${RS.pages.length}`;
   if (prog) prog.value = RS.current + 1;
-}
-
-function initVerticalObserver() {
-  const container = document.getElementById('pagesVertical');
-  if (!container) return;
-  const imgs = container.querySelectorAll('img');
-  const obs  = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        const idx = parseInt(e.target.dataset.index);
-        if (!isNaN(idx)) { RS.current = idx; updatePageCount(); }
-      }
-    });
-  }, { threshold: 0.4, rootMargin: '-25% 0px -25% 0px' });
-  imgs.forEach(img => obs.observe(img));
-}
-
-function initReaderScroll() {
-  const container = document.getElementById('pagesVertical');
-  if (!container) return;
-  let lastY = 0;
-  container.addEventListener('scroll', () => {
-    const y    = container.scrollTop;
-    const going = y > lastY && y > 60;
-    document.getElementById('readerHeader')?.classList.toggle('hidden', going);
-    document.getElementById('readerFooter')?.classList.toggle('hidden', going);
-    lastY = y;
-  }, { passive: true });
-}
-
-function initTouchSwipe() {
-  const wrap = document.getElementById('pagesHorizontal');
-  if (!wrap) return;
-  let startX = 0, startY = 0;
-  wrap.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  }, { passive: true });
-  wrap.addEventListener('touchend', e => {
-    const dx = startX - e.changedTouches[0].clientX;
-    const dy = Math.abs(startY - e.changedTouches[0].clientY);
-    if (Math.abs(dx) > 30 && Math.abs(dx) > dy) {
-      goToPage(dx > 0 ? RS.current + 1 : RS.current - 1, dx > 0 ? 'next' : 'prev');
-    }
-  }, { passive: true });
 }
 
 function initKeyboard() {
