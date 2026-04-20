@@ -1,3 +1,11 @@
+
+// Fix altura real no mobile
+function setVH() {
+  document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+}
+setVH();
+window.addEventListener('resize', setVH);
+
 /* MangaKaizoku — app.js */
 
 // ── Theme ─────────────────────────────────────────────
@@ -556,42 +564,32 @@ function animatePage(newIndex, direction, skipAnim = false) {
   const slot = document.getElementById('pageSlot');
   if (!slot) { RS.current = newIndex; updatePageCount(); return; }
 
+  RS.current = newIndex;
+  updatePageCount();
+
+  // Troca direta sem animação (barra de progresso)
   if (skipAnim) {
-    const img = document.getElementById('currentPageImg');
-    if (img) { img.src = RS.pages[newIndex]; img.alt = `Pagina ${newIndex + 1}`; }
-    RS.current = newIndex;
-    updatePageCount();
+    slot.innerHTML = `<img class="page-img" id="currentPageImg"
+      src="${RS.pages[newIndex]}" alt="Pagina ${newIndex + 1}"
+      width="860" height="1230" onerror="this.style.opacity='0.2'" />`;
     return;
   }
 
   _animating = true;
 
-  const oldImg = document.getElementById('currentPageImg');
-  const leaveClass = direction === 'next' ? 'leave-next' : 'leave-prev';
   const enterClass = direction === 'next' ? 'enter-next' : 'enter-prev';
 
-  // Cria nova imagem
-  const newImg = document.createElement('img');
-  newImg.className = `page-img ${enterClass}`;
-  newImg.src = RS.pages[newIndex];
-  newImg.alt = `Pagina ${newIndex + 1}`;
-  newImg.width = 860;
-  newImg.height = 1230;
-  newImg.onerror = () => { newImg.style.opacity = '0.2'; };
+  // Limpa slot imediatamente e coloca nova imagem
+  slot.innerHTML = `<img class="page-img ${enterClass}" id="currentPageImg"
+    src="${RS.pages[newIndex]}" alt="Pagina ${newIndex + 1}"
+    width="860" height="1230" onerror="this.style.opacity='0.2'" />`;
 
-  // Anima saída da atual
-  if (oldImg) oldImg.classList.add(leaveClass);
+  const newImg = document.getElementById('currentPageImg');
 
-  slot.appendChild(newImg);
-  RS.current = newIndex;
-  updatePageCount();
-
-  const duration = 230;
   setTimeout(() => {
-    oldImg?.remove();
-    newImg.className = 'page-img';
+    if (newImg) newImg.className = 'page-img';
     _animating = false;
-  }, duration);
+  }, 220);
 }
 
 function goToPage(index, direction) {
