@@ -841,3 +841,48 @@ document.addEventListener('DOMContentLoaded', initBannerParticles);
   .banner-title { font-size: 18px; }
   .logo-name { font-size: 13px; }
 }
+
+/* ===== LOGO IMG ===== */
+.logo-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 6px;
+  filter: drop-shadow(0 2px 8px rgba(201,168,76,0.4));
+}
+
+/* ===== BANNER LOGO IMG ===== */
+.banner-logo-img {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-60%);
+  height: clamp(120px, 30vw, 220px);
+  width: auto;
+  object-fit: contain;
+  z-index: 3;
+  filter: drop-shadow(0 8px 32px rgba(201,168,76,0.3));
+  opacity: 0.85;
+}
+@media (max-width: 480px) {
+  .banner-logo-img { height: 100px; right: 10px; opacity: 0.6; }
+}
+
+/* ===== BANNER TITLE GRADIENT CORRIGIDO ===== */
+.banner-title {
+  font-family: 'Cinzel', 'Palatino Linotype', Palatino, serif;
+  font-size: clamp(24px, 6vw, 48px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+.banner-title span {
+  display: block;
+  background: linear-gradient(135deg, #e8c96a 0%, #c9a84c 50%, #c8302a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
