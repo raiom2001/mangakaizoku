@@ -40,10 +40,24 @@ async function renderHome() {
   app.innerHTML = `
     <div class="home-banner">
       <div class="banner-particles" id="bannerParticles"></div>
-      <img src="./logo.png" alt="" class="banner-logo-img" loading="lazy"><div class="banner-content">
-        <div class="banner-eyebrow">Piratas &amp; Samurais</div>
-        <h1 class="banner-title">Sua tripulacao de<br><span>mangas favoritos</span></h1>
+      <div class="banner-jp-bg" aria-hidden="true">海賊漫画</div>
+      <div class="banner-content">
+        <div class="banner-eyebrow">
+          <span class="banner-eyebrow-line"></span>
+          <span>Piratas &amp; Samurais</span>
+          <span class="banner-eyebrow-line"></span>
+        </div>
+        <h1 class="banner-title">
+          <span class="banner-title-small">Sua tripulação de</span>
+          <span class="banner-title-big">MANGÁS</span>
+          <span class="banner-title-accent">FAVORITOS</span>
+        </h1>
         <p class="banner-desc">Explore milhares de obras. Do shonen ao seinen — navegue sem limites.</p>
+      </div>
+      <svg class="banner-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path class="banner-wave-path-1" d="M0,40 C180,80 360,0 540,40 C720,80 900,0 1080,40 C1260,80 1440,20 1440,40 L1440,80 L0,80 Z"/>
+        <path class="banner-wave-path-2" d="M0,55 C200,20 400,70 600,50 C800,30 1000,65 1200,45 C1320,35 1400,50 1440,55 L1440,80 L0,80 Z"/>
+      </svg>
       </div>
     </div>
 
